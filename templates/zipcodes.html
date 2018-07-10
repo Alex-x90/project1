@@ -1,0 +1,11 @@
+{% extends "index.html" %}
+{% block login %}
+<a href="{{ url_for('register') }}">Register</a>
+<a href="{{ url_for('login') }}">Login</a>
+{% endblock %}
+{% block body %}
+
+{{ location }}
+<br>
+<a href="{{ url_for('index') }}">Back</a>
+{% endblock %}

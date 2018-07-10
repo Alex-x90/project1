@@ -1,0 +1,17 @@
+{% extends "index.html" %}
+{% block login %}
+
+{{ account }}
+
+<a href="{{ url_for('Logout') }}">Logout</a>
+{% endblock %}
+{% block body %}
+<div class="form-group">
+    <form action="{{ url_for('main') }}" method="post">
+        <div class="form-group">
+            <input type="text" name="zipcode" placeholder="username">
+        </div>
+    </form>
+</div>
+
+{% endblock %}

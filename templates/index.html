@@ -1,0 +1,15 @@
+<!DOCTYPEhtml>
+<head>
+    <title>Weather</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+</head>
+<body>
+    <nav>
+        {% block login %}
+        {% endblock %}
+    </nav>
+    <div class="container">
+        {% block body %}
+        {% endblock %}
+    </div>
+</body>
