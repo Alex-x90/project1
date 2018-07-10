@@ -65,8 +65,8 @@ def main():
     else:
         location = db.execute("SELECT * FROM weather WHERE zipcode = :zipcode;",{"zipcode":zipcode}).fetchone()
         data_request = 0
-        lattitude = db.execute("select lattitude from weather where zipcode=:zipcode",{"zipcode":zipcode}).fetchone()
-        longitude = db.execute("select longitude from weather where zipcode=:zipcode",{"zipcode":zipcode}).fetchone()
+        lattitude = db.execute("SELECT lattitude FROM weather WHERE zipcode=:zipcode",{"zipcode":zipcode}).fetchone()
+        longitude = db.execute("SELECT longitude FROM weather WHERE zipcode=:zipcode",{"zipcode":zipcode}).fetchone()
         weather = requests.get("https://api.darksky.net/forecast/f8440b78453c3b6fc21855d9a12c8276/:lattitude,:longitude",{"lattitude": lattitude, "longitude": longitude }).json()
         #print(json.dumps(weather["currently"], indent = 2))
         note = db.execute("SELECT * FROM check_in WHERE zipcode = :zipcode;",{"zipcode":zipcode}).fetchall()
@@ -87,7 +87,7 @@ def check_in():
         if check_in:
         #checks if the user actually entered a note
             if db.execute("SELECT * FROM check_in WHERE zipcode = :zipcode and username = :username", {"zipcode": zipcode,"username":session["account"]}).rowcount == 0:
-                db.execute("insert into check_in (username,zipcode,note) values (:username,:zipcode,:check_in"),{"username":session["account"],"check_in":check_in,"zipcode":zipcode})
+                db.execute("INSERT INTO check_in (username,zipcode,note) VALUES (:username,:zipcode,:check_in"),{"username":session["account"],"check_in":check_in,"zipcode":zipcode})
                 db.execute("UPDATE weather SET check_ins = check_ins + 1 WHERE zipcode = :zipcode",{"zipcode":zipcode})
                 #adds users check in to the list of check ins and lets the main database know someone has checked in at a zipcode
 
@@ -115,9 +115,7 @@ def login():
         password = request.form.get("password")
 
     #checks if the users username and password match up with a username and password pair in the database. This doesn't work yet
-    if username == db.execute("SELECT * FROM accounts WHERE username = :username",
-                            {"username": username}).fetchone() and password == db.execute("SELECT * FROM accounts WHERE password = :password",
-                            {"password": password }).fetchone():
+    if db.execute("SELECT * FROM accounts WHERE username = :username and password = :password", {"username": username,"password": password }).fetchone() != None
         session["account"] = [username]
         return render_template("main.html", account = session["account"])
 
