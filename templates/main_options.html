@@ -6,12 +6,23 @@
 {% endblock %}
 {% block body %}
 <a href="{{ url_for('main') }}">Back</a>
-<br></br>
+<br>
+
+
 {{ location }}
-<br></br>
-{{ weather }}
+<br>
+<p>
+Summary: {{ weather.summary }} <br>
+Temperature: {{ weather.temperature }}°F<br>
+Feels like: {{ weather.apparentTemperature }}°F<br>
+Chance of precipitation: {{ weather.precipProbability }}%<br>
+Humidity: {{ weather.humidity * 100 }}%<br>
+Dew point: {{ weather.dewPoint }}°F<br>
+Wind speed: {{ weather.windSpeed }} mph<br>
+Wind gust speed: {{ weather.windGust }} mph<br>
+</p>
 {% if no_comment %}
-<br></br>
+<br>
 <p>Have you been here? tell us about it!</p>
 
 <div class="form-group">

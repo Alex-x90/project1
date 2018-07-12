@@ -38,12 +38,13 @@
             <td>{{ zipcode.state }}</td>
             <td><a href="{{ url_for('main_data', zipcode=zipcode.zipcode) }}" class="btn btn-info" role="button">Information</a></td>
         </tr>
-
+    {% else %}
+    <th scope="row">No results</th>
+    <td>No results</td>
+    <td>No results</td>
+    <td>No results</td>
     {% endfor %}
     </tbody>
 </table>
-
-
-
 {% endif %}
 {% endblock %}

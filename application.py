@@ -4,6 +4,7 @@
 import os
 import requests, json
 
+from json import loads
 from flask import Flask, session, render_template, jsonify, redirect, request,url_for
 from flask_session import Session
 from sqlalchemy import create_engine
@@ -51,7 +52,6 @@ def register():
         if db.execute("SELECT * FROM accounts WHERE username = :username", {"username": username}).rowcount != 0:
             return render_template("error.html", message="That username already exists")
         db.execute("INSERT INTO accounts (username, password) VALUES (:username,:password)",{"username":username,"password":password})
-        print("log")
         db.commit()
         return render_template("login.html")
 
@@ -77,8 +77,7 @@ def main():
             location = db.execute("SELECT * FROM weather WHERE city LIKE :city", {"city": '%'+city+'%'}).fetchall()
         else:
             location = db.execute("SELECT * FROM weather WHERE zipcode LIKE :zipcode",{"zipcode":'%'+zipcode+'%'}).fetchall()
-
-        return render_template("main.html", zipcodes=location,data_request=0,account = session["account"])
+        return render_template("main.html", zipcodes=location,data_request=0,account = session["account"],zipcode=zipcode)
 
 
 @app.route("/main/<zipcode>")
@@ -96,7 +95,7 @@ def main_data(zipcode):
     longitude = longitude[:-2]
     longitude = longitude[1:]
     weather = requests.get(f"https://api.darksky.net/forecast/f8440b78453c3b6fc21855d9a12c8276/{lattitude}{longitude}").json()
-    _weather = (json.dumps(weather["currently"], indent = 2))
+    _weather = json.loads(json.dumps(weather["currently"], indent = 2))
     notes = []
     note = db.execute("SELECT * FROM check_in WHERE zipcode = :zipcode",{"zipcode":zipcode}).fetchall()
     for x in note:
