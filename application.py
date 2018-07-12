@@ -28,6 +28,12 @@ db = scoped_session(sessionmaker(bind=engine))
 
 @app.route("/")
 def index():
+    #if the user is already logged in and goes to the root address they will be redirected to the page you go to after you log in
+    if session.get("account") is not None:
+        data_request = 1
+        account = session["account"]
+        return render_template("main.html", account = session["account"],data_request=data_request)
+
     return render_template("entrance.html")
     #initial site. redirects to login and register
 
@@ -41,7 +47,7 @@ def register():
         #gets username and password from form.
 
 
-    #checks if that username is already in the database. if results are none it means it isnt and it tries to store the username and password entered. otherwise it gives an error.
+        #checks if that username is already in the database. if results are none it means it isnt and it tries to store the username and password entered. otherwise it gives an error.
         if db.execute("SELECT * FROM accounts WHERE username = :username", {"username": username}).rowcount != 0:
             return render_template("error.html", message="That username already exists")
         db.execute("INSERT INTO accounts (username, password) VALUES (:username,:password)",{"username":username,"password":password})
@@ -64,6 +70,9 @@ def main():
         #when the user inputs a zipcode either tells them the zipcode doesnt exist or shows the information for that zipcode.
         if ((db.execute("SELECT * FROM weather WHERE zipcode LIKE :zipcode", {"zipcode": '%'+zipcode+'%'}).rowcount == 0) and (db.execute("SELECT * FROM weather WHERE city LIKE :city", {"city": '%'+city+'%'}).rowcount == 0)):
             return render_template("error_logged_in.html", message="sorry, that location doesn't exist.")
+
+        #if the user didn't enter a zipcode it checks city and then otherwise it checks the zipcode. Had to do it this way because
+        #i kept running into a wierd error where it would try to display entire database if my code was formatted differently.
         if len(zipcode) < 1:
             location = db.execute("SELECT * FROM weather WHERE city LIKE :city", {"city": '%'+city+'%'}).fetchall()
         else:
@@ -77,6 +86,8 @@ def main_data(zipcode):
 
     if session.get("account") is None:
         return render_template("error.html", message="You aren't logged in.")
+
+    #gets all the information about the location the user chose and formats it properly to enter into darksky
     location = db.execute("SELECT * FROM weather WHERE zipcode = :zipcode",{"zipcode":zipcode}).fetchone()
     lattitude = str(db.execute("SELECT lattitude FROM weather WHERE zipcode=:zipcode",{"zipcode":zipcode}).fetchone())
     longitude = str(db.execute("SELECT longitude FROM weather WHERE zipcode=:zipcode",{"zipcode":zipcode}).fetchone())
@@ -109,8 +120,6 @@ def check_in(zipcode):
         #checks if the user actually entered a note
             if db.execute("SELECT * FROM check_in WHERE zipcode = :zipcode and username = :username", {"zipcode": zipcode,"username":session["account"]}).rowcount == 0:
                 db.execute("INSERT INTO check_in (username,zipcode,note) VALUES (:username,:zipcode,:check_in)",{"username":session["account"],"check_in":check_in,"zipcode":zipcode})
-                if db.execute("select check_ins from weather where zipcode=:zipcode",{"zipcode":zipcode}).fetchone() is None:
-                    db.execute("UPDATE weather SET check_ins = 0 WHERE zipcode = :zipcode",{"zipcode":zipcode})
                 db.execute("UPDATE weather SET check_ins = check_ins + 1 WHERE zipcode = :zipcode",{"zipcode":zipcode})
                 db.commit()
                 #adds users check in to the list of check ins and lets the main database know someone has checked in at a zipcode
@@ -133,29 +142,27 @@ def login():
     if request.method == 'GET':
         return render_template("login.html")
     if request.method == 'POST':
-    #sets up the account session so that if the user logs in the website can store their username and display it.
 
         username = request.form.get("username")
         password = request.form.get("password")
 
-        #checks if the users username and password match up with a username and password pair in the database. This doesn't work yet
+        #checks if the users username and password match up with a username and password pair in the database.
         if db.execute("SELECT * FROM accounts WHERE username = :username and password = :password", {"username": username,"password": password }).rowcount == 0:
             if db.execute("SELECT * FROM accounts WHERE username = :username ", {"username": username}).rowcount == 0:
                 return render_template("error.html", message="That account doesn't exist")
             return render_template("error.html", message="You entered the incorrect password")
-
-
         else:
+
+            #sets up the account session if there isn't one so that if the user logs in the website can store their username and display it.
             if session.get("account") is None:
                 session["account"] = []
             data_request = 1
             session["account"] = username
             return render_template("main.html", account = session["account"],data_request=data_request)
 
-
 @app.route("/api/<zipcode>")
 def api_request(zipcode):
-    #gets the information about the zipcode the user entered. Dont know how to properly set up the json output that is asked for
+    #gets the information about the zipcode the user entered.
     if db.execute("SELECT * FROM weather WHERE zipcode = :zipcode", {"zipcode": zipcode}).rowcount == 0:
         return render_template("error.html", message="error 404: page not found")
     else:
@@ -169,5 +176,3 @@ def api_request(zipcode):
             "population": location["population"],
             "check_ins": location["check_ins"]
         })
-
-#postgres://ufyogmokkpfcjp:474612b9cef13b1a1d7ddf8ce28951237aca7dece94e70bfb549deebda7be0b8@ec2-54-227-244-122.compute-1.amazonaws.com:5432/d8llvvbc60g38i
