@@ -14,36 +14,36 @@
             <input type="text" name="zipcode" placeholder="zipcode">
         </div>
         <div class="form-group">
+            <input type="text" name="city" placeholder="city">
+        </div>
+        <div class="form-group">
             <button class="btn btn-primary">Submit</button>
         </div>
     </form>
 </div>
 {% else %}
+<a href="{{ url_for('main') }}">Back</a>
+<table class="table table-striped">
+    <thead>
+        <th scope="col">Zipcode</th>
+        <th scope="col">city</th>
+        <th scope="col">state</th>
+        <th scope="col">Information</th>
+    </thead>
+    <tbody>
+    {% for zipcode in zipcodes %}
+        <tr>
+            <th scope="row">{{ zipcode.zipcode }}</th>
+            <td>{{ zipcode.city }}</td>
+            <td>{{ zipcode.state }}</td>
+            <td><a href="{{ url_for('main_data', zipcode=zipcode.zipcode) }}" class="btn btn-info" role="button">Information</a></td>
+        </tr>
 
-{{ location }}
-
-{{ weather }}
-
-{% if no_comment %}
-<p>Have you been here? tell us about it!</p>
-
-<div class="form-group">
-    <form action="{{ url_for('check_in') }}" method="post">
-        <div class="form-group">
-            <input type="text" name="check_in" placeholder="This place was ...">
-        </div>
-        <div class="form-group">
-            <button class="btn btn-primary">Submit</button>
-        </div>
-    </form>
-</div>
-{% endif %}
-
-<ul>
-    {% for note in notes %}
-        <li>{{ note.username }} says {{ note.note }}</li>
     {% endfor %}
-</ul>
+    </tbody>
+</table>
+
+
 
 {% endif %}
 {% endblock %}
