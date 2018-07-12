@@ -1,11 +1,5 @@
 #current bugs:
-#1) when you query it shows the exact output for your input, not ones that might be what you were searching for
-#2) searching with a city gives a lot of different cities which don't match the query
-#3) when you try to go to one of the information pages about a zipcode it gives you the error KeyError: 'currently' which is referring to the json.dumb somehow
-
-#It is currently unknown if checking in works
-
-
+#1) check in works, in that it recognizes if you've checked in, but it won't display what you entered when you checked in.
 
 import os
 import requests, json
@@ -30,7 +24,7 @@ Session(app)
 engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
 
-notes = []
+
 
 @app.route("/")
 def index():
@@ -66,14 +60,15 @@ def main():
     if request.method == 'POST':
         zipcode = request.form.get("zipcode")
         city = request.form.get("city")
-
+        city = city.upper()
         #when the user inputs a zipcode either tells them the zipcode doesnt exist or shows the information for that zipcode.
-        if ((db.execute("SELECT * FROM weather WHERE zipcode LIKE :zipcode", {"zipcode": '%'+zipcode+'%'}).rowcount == 0) and (db.execute("SELECT * FROM weather WHERE city = :city", {"city": f"city"}).rowcount == 0)):
+        if ((db.execute("SELECT * FROM weather WHERE zipcode LIKE :zipcode", {"zipcode": '%'+zipcode+'%'}).rowcount == 0) and (db.execute("SELECT * FROM weather WHERE city LIKE :city", {"city": '%'+city+'%'}).rowcount == 0)):
             return render_template("error_logged_in.html", message="sorry, that location doesn't exist.")
+        if len(zipcode) < 1:
+            location = db.execute("SELECT * FROM weather WHERE city LIKE :city", {"city": '%'+city+'%'}).fetchall()
+        else:
+            location = db.execute("SELECT * FROM weather WHERE zipcode LIKE :zipcode",{"zipcode":'%'+zipcode+'%'}).fetchall()
 
-        location = db.execute("SELECT * FROM weather WHERE zipcode LIKE :zipcode",{"zipcode":'%'+zipcode+'%'}).fetchall()
-        if location == None:
-            location = db.execute("SELECT * FROM weather WHERE city = :city", {"city": f"%{city}%"}).fetchall()
         return render_template("main.html", zipcodes=location,data_request=0,account = session["account"])
 
 
@@ -83,12 +78,16 @@ def main_data(zipcode):
     if session.get("account") is None:
         return render_template("error.html", message="You aren't logged in.")
     location = db.execute("SELECT * FROM weather WHERE zipcode = :zipcode",{"zipcode":zipcode}).fetchone()
-    lattitude = db.execute("SELECT lattitude FROM weather WHERE zipcode=:zipcode",{"zipcode":zipcode}).fetchone()
-    longitude = db.execute("SELECT longitude FROM weather WHERE zipcode=:zipcode",{"zipcode":zipcode}).fetchone()
-    print (lattitude)
-    weather = str(requests.get("https://api.darksky.net/forecast/f8440b78453c3b6fc21855d9a12c8276/"+lattitude+','+longitude).json())
-    weather = (json.dumps(weather["currently"], indent = 2))
-    note = db.execute("SELECT note FROM check_in WHERE zipcode = :zipcode",{"zipcode":zipcode}).fetchall()
+    lattitude = str(db.execute("SELECT lattitude FROM weather WHERE zipcode=:zipcode",{"zipcode":zipcode}).fetchone())
+    longitude = str(db.execute("SELECT longitude FROM weather WHERE zipcode=:zipcode",{"zipcode":zipcode}).fetchone())
+    lattitude = lattitude[:-1]
+    lattitude = lattitude[1:]
+    longitude = longitude[:-2]
+    longitude = longitude[1:]
+    weather = requests.get(f"https://api.darksky.net/forecast/f8440b78453c3b6fc21855d9a12c8276/{lattitude}{longitude}").json()
+    _weather =  (json.dumps(weather["currently"], indent = 2))
+    notes = []
+    note = db.execute("SELECT * FROM check_in WHERE zipcode = :zipcode",{"zipcode":zipcode}).fetchall()
     for x in note:
         notes.append(note)
 
@@ -98,7 +97,7 @@ def main_data(zipcode):
     else:
         no_comment = 0
     #re-renders main with all the data that has been added.
-    return render_template("main.html", location=location,notes=notes,no_comment=no_comment,weather=weather)
+    return render_template("main_options.html", location=location,notes=notes,no_comment=no_comment,weather=_weather,zipcode=zipcode)
 
 @app.route("/check_in/<zipcode>" , methods=["GET","POST"])
 def check_in(zipcode):
@@ -118,13 +117,14 @@ def check_in(zipcode):
                 return render_template("error_logged_in.html", message="sorry, that zipcode doesn't exist.")
         else:
             return render_template("error_logged_in.html", message="In order to check in you need to add a note.")
-    return render_template("main.html", notes=notes)
+    no_comment = 0
+    return redirect("main_options.html", zipcode=zipcode)
 
 @app.route("/logout")
 def logout():
     #logs the user out by deleting informtion from the session that stores their information
     session["account"] = None
-    return render_template("entrance.html")
+    return render_template("login.html")
 
 @app.route("/login" , methods=["GET", "POST"])
 def login():

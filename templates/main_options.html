@@ -6,12 +6,14 @@
 {% endblock %}
 {% block body %}
 {{ location }}
-
+{{ weather }}
 {% if no_comment %}
+<a href="{{ url_for('main') }}">Back</a>
+<br>
 <p>Have you been here? tell us about it!</p>
 
 <div class="form-group">
-    <form action="{{ url_for('check_in') }}" method="post">
+    <form action="{{ url_for('check_in', zipcode=zipcode) }}" method="post">
         <div class="form-group">
             <input type="text" name="check_in" placeholder="This place was ...">
         </div>
