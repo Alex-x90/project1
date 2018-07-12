@@ -5,17 +5,19 @@
 <a href="{{ url_for('logout') }}">Logout</a>
 {% endblock %}
 {% block body %}
+<a href="{{ url_for('main') }}">Back</a>
+<br></br>
 {{ location }}
+<br></br>
 {{ weather }}
 {% if no_comment %}
-<a href="{{ url_for('main') }}">Back</a>
-<br>
+<br></br>
 <p>Have you been here? tell us about it!</p>
 
 <div class="form-group">
     <form action="{{ url_for('check_in', zipcode=zipcode) }}" method="post">
         <div class="form-group">
-            <input type="text" name="check_in" placeholder="This place was ...">
+            <input type="text" name="check_in" placeholder="I liked this place">
         </div>
         <div class="form-group">
             <button class="btn btn-primary">Submit</button>

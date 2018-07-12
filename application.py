@@ -1,5 +1,5 @@
 #current bugs:
-#1) check in works, in that it recognizes if you've checked in, but it won't display what you entered when you checked in.
+#NO BUGS!
 
 import os
 import requests, json
@@ -85,11 +85,11 @@ def main_data(zipcode):
     longitude = longitude[:-2]
     longitude = longitude[1:]
     weather = requests.get(f"https://api.darksky.net/forecast/f8440b78453c3b6fc21855d9a12c8276/{lattitude}{longitude}").json()
-    _weather =  (json.dumps(weather["currently"], indent = 2))
+    _weather = (json.dumps(weather["currently"], indent = 2))
     notes = []
     note = db.execute("SELECT * FROM check_in WHERE zipcode = :zipcode",{"zipcode":zipcode}).fetchall()
     for x in note:
-        notes.append(note)
+        notes.append(x)
 
     #checks if the user has already made a note. if so doesn't display the portion of the page that would allow them to submit a new note.
     if db.execute("SELECT * FROM check_in WHERE zipcode = :zipcode and username = :username", {"zipcode": zipcode,"username":session["account"]}).rowcount == 0:
@@ -109,6 +109,8 @@ def check_in(zipcode):
         #checks if the user actually entered a note
             if db.execute("SELECT * FROM check_in WHERE zipcode = :zipcode and username = :username", {"zipcode": zipcode,"username":session["account"]}).rowcount == 0:
                 db.execute("INSERT INTO check_in (username,zipcode,note) VALUES (:username,:zipcode,:check_in)",{"username":session["account"],"check_in":check_in,"zipcode":zipcode})
+                if db.execute("select check_ins from weather where zipcode=:zipcode",{"zipcode":zipcode}).fetchone() is None:
+                    db.execute("UPDATE weather SET check_ins = 0 WHERE zipcode = :zipcode",{"zipcode":zipcode})
                 db.execute("UPDATE weather SET check_ins = check_ins + 1 WHERE zipcode = :zipcode",{"zipcode":zipcode})
                 db.commit()
                 #adds users check in to the list of check ins and lets the main database know someone has checked in at a zipcode
@@ -117,8 +119,7 @@ def check_in(zipcode):
                 return render_template("error_logged_in.html", message="sorry, that zipcode doesn't exist.")
         else:
             return render_template("error_logged_in.html", message="In order to check in you need to add a note.")
-    no_comment = 0
-    return redirect("main_options.html", zipcode=zipcode)
+    return redirect("/main/zipcode")
 
 @app.route("/logout")
 def logout():
