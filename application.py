@@ -1,10 +1,10 @@
 #current bugs:
-#NO BUGS!
+#Need to figure out how to reformat the json i get from darksky
 
 import os
 import requests, json
 
-from flask import Flask, session, render_template, jsonify, redirect, request
+from flask import Flask, session, render_template, jsonify, redirect, request,url_for
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -119,7 +119,8 @@ def check_in(zipcode):
                 return render_template("error_logged_in.html", message="sorry, that zipcode doesn't exist.")
         else:
             return render_template("error_logged_in.html", message="In order to check in you need to add a note.")
-    return redirect("/main/zipcode")
+    data_request=1
+    return render_template("main.html",account = session["account"],data_request=data_request)
 
 @app.route("/logout")
 def logout():
